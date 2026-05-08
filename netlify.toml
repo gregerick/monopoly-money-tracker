@@ -5,6 +5,18 @@
 [build.environment]
   NODE_VERSION = "18"
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  command = ""
+
+[context.deploy-preview]
+  command = ""
+
+# Custom headers for security and performance
 [[headers]]
   for = "/*"
   [headers.values]
@@ -12,14 +24,15 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
 
 [[headers]]
-  for = "*.css"
+  for = "*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "*.js"
+  for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
@@ -28,8 +41,7 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Redirect all routes to index.html for SPA-like behavior
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 404
+[[headers]]
+  for = "*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

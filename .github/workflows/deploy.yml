@@ -1,0 +1,29 @@
+name: Deploy to Netlify
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Netlify
+      uses: nwtgck/actions-netlify@v2
+      with:
+        publish-dir: '.'
+        production-branch: main
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Deploy from GitHub Actions"
+        enable-pull-request-comment: true
+        enable-commit-comment: true
+        netlify-site-id: ${{ secrets.NETLIFY_SITE_ID }}
+        netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      env:
+        NETLIFY_SITE_NAME: momoney
