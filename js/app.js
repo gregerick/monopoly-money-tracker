@@ -501,6 +501,8 @@ class MoneyTransferGame {
     saveGame() {
         const gameState = {
             players: this.players,
+            freeParkingBalance: this.freeParkingBalance,
+            transactionHistory: this.transactionHistory,
             timestamp: new Date().toISOString(),
             version: '1.0'
         };
@@ -536,7 +538,12 @@ class MoneyTransferGame {
                     throw new Error('Invalid game file format');
                 }
                 
+                // Restore complete game state
                 this.players = gameState.players;
+                this.freeParkingBalance = gameState.freeParkingBalance || 0;
+                this.transactionHistory = gameState.transactionHistory || [];
+                
+                // Update UI and save to localStorage
                 this.updateUI();
                 this.saveGameState();
                 
