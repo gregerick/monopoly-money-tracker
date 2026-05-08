@@ -1,12 +1,16 @@
 // Game state management
 class MoneyTransferGame {
     constructor() {
-        this.players = [
+        // Default player configuration
+        this.defaultPlayers = [
             { id: 1, name: 'Player 1', balance: 1500, color: '#e74c3c' },
             { id: 2, name: 'Player 2', balance: 1500, color: '#27ae60' },
             { id: 3, name: 'Player 3', balance: 1500, color: '#3498db' },
             { id: 4, name: 'Player 4', balance: 1500, color: '#f39c12' }
         ];
+        
+        // Initialize players with default values, then load customizations
+        this.players = JSON.parse(JSON.stringify(this.defaultPlayers));
         
         this.selectedPlayer = null;
         this.transferType = null;
@@ -18,8 +22,10 @@ class MoneyTransferGame {
         // Modal promise resolvers
         this.confirmResolver = null;
         this.alertResolver = null;
+        this.nameConflictResolver = null;
         
         this.initializeEventListeners();
+        this.loadPlayerCustomizations();
         this.loadGameState();
         this.initializeTheme();
         this.updateUI();
@@ -52,6 +58,14 @@ class MoneyTransferGame {
         document.getElementById('closeHistoryModal').addEventListener('click', () => this.closeHistoryModal());
         document.getElementById('closeHistory').addEventListener('click', () => this.closeHistoryModal());
         
+        // Name conflict modal controls
+        document.getElementById('closeNameConflictModal').addEventListener('click', () => this.closeNameConflictModal(false));
+        document.getElementById('useCurrentName').addEventListener('click', () => this.closeNameConflictModal(false));
+        document.getElementById('useIncomingName').addEventListener('click', () => this.closeNameConflictModal(true));
+        document.getElementById('nameConflictModal').addEventListener('click', (e) => {
+            if (e.target.id === 'nameConflictModal') this.closeNameConflictModal(false);
+        });
+        
         // Free Parking modal controls
         document.getElementById('closeFreeParkingModal').addEventListener('click', () => this.closeFreeParkingModal());
         document.getElementById('closeFreeParking').addEventListener('click', () => this.closeFreeParkingModal());
@@ -62,6 +76,7 @@ class MoneyTransferGame {
         // Edit players modal controls
         document.getElementById('savePlayerNames').addEventListener('click', () => this.savePlayerNames());
         document.getElementById('cancelEdit').addEventListener('click', () => this.closeEditPlayersModal());
+        document.getElementById('resetPlayersBtn').addEventListener('click', () => this.resetPlayers());
         
         // Transfer type buttons
         document.getElementById('paysBtn').addEventListener('click', () => this.selectTransferType('pays'));
@@ -470,10 +485,46 @@ class MoneyTransferGame {
         document.getElementById('freeParkingBalance').textContent = this.freeParkingBalance;
     }
     
-    // Save game state to localStorage
+    // Save player customizations (names and colors) to localStorage
+    savePlayerCustomizations() {
+        const customizations = {
+            players: this.players.map(player => ({
+                id: player.id,
+                name: player.name !== this.defaultPlayers.find(p => p.id === player.id).name ? player.name : null,
+                color: player.color !== this.defaultPlayers.find(p => p.id === player.id).color ? player.color : null
+            }))
+        };
+        localStorage.setItem('moneyGamePlayerCustomizations', JSON.stringify(customizations));
+    }
+    
+    // Load player customizations from localStorage
+    loadPlayerCustomizations() {
+        const saved = localStorage.getItem('moneyGamePlayerCustomizations');
+        if (saved) {
+            try {
+                const customizations = JSON.parse(saved);
+                if (customizations.players && Array.isArray(customizations.players)) {
+                    customizations.players.forEach(customPlayer => {
+                        const player = this.players.find(p => p.id === customPlayer.id);
+                        if (player) {
+                            if (customPlayer.name) player.name = customPlayer.name;
+                            if (customPlayer.color) player.color = customPlayer.color;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading player customizations:', error);
+            }
+        }
+    }
+    
+    // Save game state to localStorage (balances and history only)
     saveGameState() {
         const gameState = {
-            players: this.players,
+            players: this.players.map(player => ({
+                id: player.id,
+                balance: player.balance
+            })),
             freeParkingBalance: this.freeParkingBalance,
             transactionHistory: this.transactionHistory,
             timestamp: new Date().toISOString()
@@ -481,13 +532,23 @@ class MoneyTransferGame {
         localStorage.setItem('moneyTransferGame', JSON.stringify(gameState));
     }
     
-    // Load game state from localStorage
+    // Load game state from localStorage (balances and history only)
     loadGameState() {
         const saved = localStorage.getItem('moneyTransferGame');
         if (saved) {
             try {
                 const gameState = JSON.parse(saved);
-                this.players = gameState.players;
+                
+                // Load player balances only
+                if (gameState.players && Array.isArray(gameState.players)) {
+                    gameState.players.forEach(savedPlayer => {
+                        const player = this.players.find(p => p.id === savedPlayer.id);
+                        if (player && savedPlayer.balance !== undefined) {
+                            player.balance = savedPlayer.balance;
+                        }
+                    });
+                }
+                
                 this.freeParkingBalance = gameState.freeParkingBalance || 0;
                 this.transactionHistory = gameState.transactionHistory || [];
                 console.log('Game state loaded from localStorage');
@@ -497,10 +558,18 @@ class MoneyTransferGame {
         }
     }
     
-    // Save game to file
+    // Save game to file (only non-default names and colors)
     saveGame() {
         const gameState = {
-            players: this.players,
+            players: this.players.map(player => {
+                const defaultPlayer = this.defaultPlayers.find(p => p.id === player.id);
+                return {
+                    id: player.id,
+                    name: player.name !== defaultPlayer.name ? player.name : null,
+                    color: player.color !== defaultPlayer.color ? player.color : null,
+                    balance: player.balance
+                };
+            }),
             freeParkingBalance: this.freeParkingBalance,
             transactionHistory: this.transactionHistory,
             timestamp: new Date().toISOString(),
@@ -523,7 +592,7 @@ class MoneyTransferGame {
         document.getElementById('loadFile').click();
     }
     
-    // Handle file load
+    // Handle file load with name conflict resolution
     async handleFileLoad(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -538,14 +607,77 @@ class MoneyTransferGame {
                     throw new Error('Invalid game file format');
                 }
                 
-                // Restore complete game state
-                this.players = gameState.players;
+                // Process name conflicts
+                const nameConflicts = [];
+                gameState.players.forEach(incomingPlayer => {
+                    const currentPlayer = this.players.find(p => p.id === incomingPlayer.id);
+                    if (currentPlayer && incomingPlayer.name && currentPlayer.name !== incomingPlayer.name) {
+                        const currentDefault = this.defaultPlayers.find(p => p.id === incomingPlayer.id);
+                        // Only show conflict if both names are non-default and different
+                        if (currentPlayer.name !== currentDefault.name && incomingPlayer.name !== currentDefault.name) {
+                            nameConflicts.push({
+                                playerId: incomingPlayer.id,
+                                currentName: currentPlayer.name,
+                                incomingName: incomingPlayer.name
+                            });
+                        }
+                    }
+                });
+                
+                // Resolve conflicts
+                const resolvedNames = {};
+                for (const conflict of nameConflicts) {
+                    const useIncoming = await this.showNameConflictModal(conflict.currentName, conflict.incomingName);
+                    resolvedNames[conflict.playerId] = useIncoming ? conflict.incomingName : conflict.currentName;
+                }
+                
+                // Apply game state with resolved conflicts
+                gameState.players.forEach(incomingPlayer => {
+                    const currentPlayer = this.players.find(p => p.id === incomingPlayer.id);
+                    if (currentPlayer) {
+                        // Apply balance
+                        if (incomingPlayer.balance !== undefined) {
+                            currentPlayer.balance = incomingPlayer.balance;
+                        }
+                        
+                        // Apply name with conflict resolution
+                        if (incomingPlayer.name) {
+                            const currentDefault = this.defaultPlayers.find(p => p.id === incomingPlayer.id);
+                            if (incomingPlayer.name !== currentDefault.name) {
+                                // Non-default incoming name
+                                if (currentPlayer.name === currentDefault.name) {
+                                    // Current is default, automatically apply incoming
+                                    currentPlayer.name = incomingPlayer.name;
+                                } else if (resolvedNames[incomingPlayer.id]) {
+                                    // Use resolved name
+                                    currentPlayer.name = resolvedNames[incomingPlayer.id];
+                                }
+                                // If no resolution, keep current (conflict resolved to keep current)
+                            }
+                            // If incoming is default, don't change current
+                        }
+                        
+                        // Apply color with similar logic
+                        if (incomingPlayer.color) {
+                            const currentDefault = this.defaultPlayers.find(p => p.id === incomingPlayer.id);
+                            if (incomingPlayer.color !== currentDefault.color) {
+                                // Non-default incoming color, apply if current is default or if it's different
+                                if (currentPlayer.color === currentDefault.color || currentPlayer.color !== incomingPlayer.color) {
+                                    currentPlayer.color = incomingPlayer.color;
+                                }
+                            }
+                            // If incoming is default, don't change current
+                        }
+                    }
+                });
+                
                 this.freeParkingBalance = gameState.freeParkingBalance || 0;
                 this.transactionHistory = gameState.transactionHistory || [];
                 
                 // Update UI and save to localStorage
                 this.updateUI();
                 this.saveGameState();
+                this.savePlayerCustomizations();
                 
                 console.log('Game loaded from file successfully');
                 await this.showAlert('Game loaded successfully!');
@@ -572,7 +704,7 @@ class MoneyTransferGame {
             };
             
             this.selectedPlayer.balance += 200;
-            const transactionDescription = `${this.selectedPlayer.name} passed Go and received $200 from the bank`;
+            const transactionDescription = `${this.selectedPlayer.name} received $200 from the bank`;
             this.addTransactionToHistory(transactionDescription, previousState);
             this.updateUI();
             this.saveGameState();
@@ -681,7 +813,7 @@ class MoneyTransferGame {
                 player.color = selectedColor;
                 
                 // Save the color change to localStorage
-                this.saveGameState();
+                this.savePlayerCustomizations();
                 
                 // Update player card border color
                 const playerCard = document.querySelector(`[data-player-id="${player.id}"]`);
@@ -766,7 +898,7 @@ class MoneyTransferGame {
         
         if (changesMade) {
             this.updateUI();
-            this.saveGameState();
+            this.savePlayerCustomizations();
         }
         
         this.closeEditPlayersModal();
@@ -833,14 +965,6 @@ class MoneyTransferGame {
                         data.entity = fromName; // bank, Free Parking, etc.
                     }
                 }
-            }
-        } else if (description.includes('passed Go')) {
-            data.type = 'passGo';
-            const parts = description.split(' passed Go and received $');
-            if (parts.length === 2) {
-                const playerName = parts[0].trim();
-                data.toPlayerId = this.findPlayerIdByName(playerName);
-                data.entity = 'bank';
             }
         }
         
@@ -909,12 +1033,7 @@ class MoneyTransferGame {
                         description = `${this.formatPlayerName(toPlayer)} received $${transaction.amount} from ${transaction.entity}`;
                     }
                     break;
-                case 'passGo':
-                    if (toPlayer) {
-                        description = `${this.formatPlayerName(toPlayer)} passed Go and received $${transaction.amount} from the bank`;
-                    }
-                    break;
-                default:
+                                default:
                     // Fallback to original description
                     description = transaction.description;
                     break;
@@ -1037,17 +1156,40 @@ class MoneyTransferGame {
         await this.showAlert(`${player.name} received $${amount} from Free Parking!`);
     }
     
-    // Reset game to default state
-    async resetGame() {
-        const shouldReset = await this.showConfirm('Are you sure you want to reset the game? This will clear all customizations and reset everything to default values.');
+    // Reset players to default names and colors only
+    async resetPlayers() {
+        const shouldReset = await this.showConfirm('Are you sure you want to reset all player names and colors to default values?');
         if (shouldReset) {
-            // Reset players to default values
-            this.players = [
-                { id: 1, name: 'Player 1', balance: 1500, color: '#e74c3c' },
-                { id: 2, name: 'Player 2', balance: 1500, color: '#27ae60' },
-                { id: 3, name: 'Player 3', balance: 1500, color: '#3498db' },
-                { id: 4, name: 'Player 4', balance: 1500, color: '#f39c12' }
-            ];
+            this.players.forEach(player => {
+                const defaultPlayer = this.defaultPlayers.find(p => p.id === player.id);
+                if (defaultPlayer) {
+                    player.name = defaultPlayer.name;
+                    player.color = defaultPlayer.color;
+                }
+            });
+            
+            // Clear customizations from localStorage
+            localStorage.removeItem('moneyGamePlayerCustomizations');
+            
+            // Update UI and save
+            this.updateUI();
+            this.savePlayerCustomizations();
+            
+            // Close the edit modal
+            this.closeEditPlayersModal();
+            
+            await this.showAlert('Player names and colors have been reset to defaults!');
+        }
+    }
+    
+    // Reset game (clears balances and history only, preserves customizations)
+    async resetGame() {
+        const shouldReset = await this.showConfirm('Are you sure you want to reset the game? This will clear all balances and history, but keep player names and colors.');
+        if (shouldReset) {
+            // Reset player balances only
+            this.players.forEach(player => {
+                player.balance = 1500;
+            });
             
             // Reset other game state
             this.selectedPlayer = null;
@@ -1057,21 +1199,11 @@ class MoneyTransferGame {
             this.freeParkingBalance = 0;
             this.transactionHistory = [];
             
-            // Reset player card styles
-            document.querySelectorAll('.player-card').forEach(card => {
-                const playerId = parseInt(card.dataset.playerId);
-                const player = this.players.find(p => p.id === playerId);
-                if (player) {
-                    card.style.border = `4px solid ${player.color}`;
-                    card.style.boxShadow = `0 0 10px ${player.color}40`;
-                }
-            });
-            
             // Update UI and save
             this.updateUI();
             this.saveGameState();
             
-            await this.showAlert('Game has been reset to default values!');
+            await this.showAlert('Game has been reset! Balances and history cleared, but player names and colors preserved.');
         }
     }
     
@@ -1136,6 +1268,26 @@ class MoneyTransferGame {
             document.getElementById('alertMessage').textContent = message;
             document.getElementById('alertModal').classList.add('show');
         });
+    }
+    
+    // Show name conflict modal (returns Promise<boolean> - true for incoming, false for current)
+    showNameConflictModal(currentName, incomingName) {
+        return new Promise((resolve) => {
+            this.nameConflictResolver = resolve;
+            document.getElementById('nameConflictMessage').textContent = 'There is a conflict between the current and incoming player name. Which would you like to use?';
+            document.getElementById('currentName').textContent = currentName;
+            document.getElementById('incomingName').textContent = incomingName;
+            document.getElementById('nameConflictModal').classList.add('show');
+        });
+    }
+    
+    // Close name conflict modal
+    closeNameConflictModal(useIncoming) {
+        document.getElementById('nameConflictModal').classList.remove('show');
+        if (this.nameConflictResolver) {
+            this.nameConflictResolver(useIncoming);
+            this.nameConflictResolver = null;
+        }
     }
     
     // Close alert modal
