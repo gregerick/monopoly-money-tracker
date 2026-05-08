@@ -2,10 +2,10 @@
 class MoneyTransferGame {
     constructor() {
         this.players = [
-            { id: 1, name: 'Player 1', balance: 1500, color: '#ff6b6b' },
-            { id: 2, name: 'Player 2', balance: 1500, color: '#4ecdc4' },
-            { id: 3, name: 'Player 3', balance: 1500, color: '#45b7d1' },
-            { id: 4, name: 'Player 4', balance: 1500, color: '#f9ca24' }
+            { id: 1, name: 'Player 1', balance: 1500, color: '#e74c3c' },
+            { id: 2, name: 'Player 2', balance: 1500, color: '#27ae60' },
+            { id: 3, name: 'Player 3', balance: 1500, color: '#3498db' },
+            { id: 4, name: 'Player 4', balance: 1500, color: '#f39c12' }
         ];
         
         this.selectedPlayer = null;
@@ -139,7 +139,6 @@ class MoneyTransferGame {
         document.getElementById('transferTypeSection').style.display = 'none';
         document.getElementById('amountSection').style.display = 'block';
         document.getElementById('backBtn').style.display = 'inline-block';
-        document.getElementById('passGoBtn').style.display = 'inline-block';
         // Reset amount input
         document.getElementById('transferAmount').value = '0';
     }
@@ -149,7 +148,6 @@ class MoneyTransferGame {
         document.getElementById('amountSection').style.display = 'none';
         document.getElementById('transferTypeSection').style.display = 'block';
         document.getElementById('backBtn').style.display = 'none';
-        document.getElementById('passGoBtn').style.display = 'none';
         this.transferType = null;
     }
     
@@ -324,7 +322,9 @@ class MoneyTransferGame {
         this.players.forEach(player => {
             const card = document.querySelector(`[data-player-id="${player.id}"]`);
             const balanceElement = card.querySelector('.balance-amount');
+            const nameElement = card.querySelector('.player-name');
             balanceElement.textContent = player.balance;
+            nameElement.textContent = player.name;
         });
         
         // Update Free Parking display
@@ -438,6 +438,8 @@ class MoneyTransferGame {
             this.updateUI();
             this.saveGameState();
             this.closeTransferModal();
+        } else {
+            alert('Please select a player first by clicking on their card, then click Pass Go.');
         }
     }
     
@@ -452,10 +454,20 @@ class MoneyTransferGame {
             const editField = document.createElement('div');
             editField.className = 'player-edit-field';
             editField.innerHTML = `
-                <div class="player-color-indicator" style="background-color: ${player.color}"></div>
-                <input type="text" id="playerName${player.id}" value="${player.name}" maxlength="20">
+                <div class="player-color-section">
+                    <div class="player-color-indicator" id="colorIndicator${player.id}" style="background-color: ${player.color}"></div>
+                    <input type="color" id="playerColor${player.id}" value="${player.color}" class="color-picker">
+                </div>
+                <input type="text" id="playerName${player.id}" value="${player.name}" maxlength="20" class="name-input">
             `;
             container.appendChild(editField);
+            
+            // Add event listener for color change
+            const colorInput = document.getElementById(`playerColor${player.id}`);
+            const colorIndicator = document.getElementById(`colorIndicator${player.id}`);
+            colorInput.addEventListener('input', (e) => {
+                colorIndicator.style.backgroundColor = e.target.value;
+            });
         });
         
         modal.classList.add('show');
@@ -468,17 +480,31 @@ class MoneyTransferGame {
     
     // Save player names
     savePlayerNames() {
-        let namesChanged = false;
+        let changesMade = false;
         this.players.forEach(player => {
-            const input = document.getElementById(`playerName${player.id}`);
-            const newName = input.value.trim();
+            const nameInput = document.getElementById(`playerName${player.id}`);
+            const colorInput = document.getElementById(`playerColor${player.id}`);
+            const newName = nameInput.value.trim();
+            const newColor = colorInput.value;
+            
             if (newName && newName !== player.name) {
                 player.name = newName;
-                namesChanged = true;
+                changesMade = true;
+            }
+            
+            if (newColor && newColor !== player.color) {
+                player.color = newColor;
+                changesMade = true;
+                // Update the player card border color dynamically
+                const playerCard = document.querySelector(`[data-player-id="${player.id}"]`);
+                if (playerCard) {
+                    playerCard.style.border = `4px solid ${newColor}`;
+                    playerCard.style.boxShadow = `0 0 10px ${newColor}40`; // Add transparency
+                }
             }
         });
         
-        if (namesChanged) {
+        if (changesMade) {
             this.updateUI();
             this.saveGameState();
         }
