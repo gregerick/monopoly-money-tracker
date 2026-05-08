@@ -9,7 +9,7 @@
 <body>
     <header>
         <div class="header-left">
-            <div class="free-parking-display">
+            <div id="freeParkingBtn" class="free-parking-display clickable" title="Free Parking">
                 <span class="free-parking-icon">🅿️</span>
                 <span>Free Parking: $<span id="freeParkingBalance">0</span></span>
             </div>
@@ -23,6 +23,7 @@
                 <button id="loadBtn" class="btn btn-secondary">Load Game</button>
             </div>
             <div class="action-buttons">
+                <button id="themeToggle" class="btn btn-icon" title="Toggle Theme">🌙</button>
                 <button id="editPlayersBtn" class="btn btn-icon" title="Edit Players">✏️</button>
                 <button id="historyBtn" class="btn btn-icon" title="History">🕐</button>
                 <button id="undoBtn" class="btn btn-icon" title="Undo">↩️</button>
@@ -34,7 +35,7 @@
         <section class="players-grid">
             <div class="player-card" data-player-id="1">
                 <div class="player-avatar">
-                    <img src="https://picsum.photos/seed/player1/100/100.jpg" alt="Player 1">
+                    <div class="player-initials player-initials-large" style="color: #e74c3c; background-color: rgb(224, 199, 197); border-color: #e74c3c;">P1</div>
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 1</h3>
@@ -44,7 +45,7 @@
 
             <div class="player-card" data-player-id="2">
                 <div class="player-avatar">
-                    <img src="https://picsum.photos/seed/player2/100/100.jpg" alt="Player 2">
+                    <div class="player-initials player-initials-large" style="color: #27ae60; background-color: rgb(207, 236, 209); border-color: #27ae60;">P2</div>
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 2</h3>
@@ -54,7 +55,7 @@
 
             <div class="player-card" data-player-id="3">
                 <div class="player-avatar">
-                    <img src="https://picsum.photos/seed/player3/100/100.jpg" alt="Player 3">
+                    <div class="player-initials player-initials-large" style="color: #3498db; background-color: rgb(214, 229, 245); border-color: #3498db;">P3</div>
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 3</h3>
@@ -64,7 +65,7 @@
 
             <div class="player-card" data-player-id="4">
                 <div class="player-avatar">
-                    <img src="https://picsum.photos/seed/player4/100/100.jpg" alt="Player 4">
+                    <div class="player-initials player-initials-large" style="color: #f39c12; background-color: rgb(251, 230, 199); border-color: #f39c12;">P4</div>
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 4</h3>
@@ -171,8 +172,84 @@
                     <!-- History items will be populated here -->
                 </div>
                 <div class="modal-actions">
-                    <button id="clearHistory" class="btn btn-danger">Clear History</button>
                     <button id="closeHistory" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Free Parking Modal -->
+    <div id="freeParkingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Free Parking</h2>
+                <button class="close-btn" id="closeFreeParkingModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="free-parking-info">
+                    <div class="free-parking-amount">
+                        <span class="free-parking-icon-large">🅿️</span>
+                        <div class="amount-display">
+                            <span class="amount-label">Current Balance:</span>
+                            <span class="amount-value">$<span id="freeParkingModalBalance">0</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="payOutBtn" class="btn btn-success">Pay Out</button>
+                    <button id="closeFreeParking" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Free Parking Payout Modal -->
+    <div id="freeParkingPayoutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Player for Payout</h2>
+                <button class="close-btn" id="closeFreeParkingPayoutModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Select a player to receive $<span id="payoutAmount">0</span> from Free Parking:</p>
+                <div class="payout-players" id="payoutPlayersContainer">
+                    <!-- Players will be populated here -->
+                </div>
+                <div class="modal-actions">
+                    <button id="cancelPayout" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content modal-content-small">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirm</h2>
+                <button class="close-btn" id="closeConfirmModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure?</p>
+                <div class="modal-actions">
+                    <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
+                    <button id="confirmOk" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content modal-content-small">
+            <div class="modal-header">
+                <h2 id="alertTitle">Alert</h2>
+                <button class="close-btn" id="closeAlertModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="alertMessage">Message</p>
+                <div class="modal-actions">
+                    <button id="alertOk" class="btn btn-primary">OK</button>
                 </div>
             </div>
         </div>
