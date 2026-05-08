@@ -25,7 +25,7 @@
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 1</h3>
-                    <div class="player-balance">$<span class="balance-amount">1000</span></div>
+                    <div class="player-balance">$<span class="balance-amount">1500</span></div>
                 </div>
             </div>
 
@@ -35,7 +35,7 @@
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 2</h3>
-                    <div class="player-balance">$<span class="balance-amount">1000</span></div>
+                    <div class="player-balance">$<span class="balance-amount">1500</span></div>
                 </div>
             </div>
 
@@ -45,7 +45,7 @@
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 3</h3>
-                    <div class="player-balance">$<span class="balance-amount">1000</span></div>
+                    <div class="player-balance">$<span class="balance-amount">1500</span></div>
                 </div>
             </div>
 
@@ -55,7 +55,7 @@
                 </div>
                 <div class="player-info">
                     <h3 class="player-name">Player 4</h3>
-                    <div class="player-balance">$<span class="balance-amount">1000</span></div>
+                    <div class="player-balance">$<span class="balance-amount">1500</span></div>
                 </div>
             </div>
         </section>
@@ -81,9 +81,38 @@
                 
                 <!-- Step 2: Amount Input -->
                 <div id="amountSection" style="display: none;">
-                    <label for="transferAmount">Amount:</label>
-                    <input type="number" id="transferAmount" min="1" step="1" value="100">
-                    <button id="confirmAmount" class="btn btn-success">Continue</button>
+                    <div class="amount-input-container">
+                        <label for="transferAmount">Amount:</label>
+                        <div class="amount-display">
+                            <input type="number" id="transferAmount" min="1" step="1" value="100" readonly>
+                        </div>
+                        <div class="keypad">
+                            <div class="keypad-row">
+                                <button class="keypad-btn" data-value="1">1</button>
+                                <button class="keypad-btn" data-value="2">2</button>
+                                <button class="keypad-btn" data-value="3">3</button>
+                            </div>
+                            <div class="keypad-row">
+                                <button class="keypad-btn" data-value="4">4</button>
+                                <button class="keypad-btn" data-value="5">5</button>
+                                <button class="keypad-btn" data-value="6">6</button>
+                            </div>
+                            <div class="keypad-row">
+                                <button class="keypad-btn" data-value="7">7</button>
+                                <button class="keypad-btn" data-value="8">8</button>
+                                <button class="keypad-btn" data-value="9">9</button>
+                            </div>
+                            <div class="keypad-row">
+                                <button class="keypad-btn" data-value="0">0</button>
+                                <button class="keypad-btn" data-value="00">00</button>
+                                <button class="keypad-btn clear-btn" data-action="clear">C</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="amount-actions">
+                        <button id="backBtn" class="btn btn-secondary" style="display: none;">Back</button>
+                        <button id="confirmAmount" class="btn btn-success">Continue</button>
+                    </div>
                 </div>
                 
                 <!-- Step 3: Target Selection -->

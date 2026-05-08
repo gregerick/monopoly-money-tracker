@@ -2,10 +2,10 @@
 class MoneyTransferGame {
     constructor() {
         this.players = [
-            { id: 1, name: 'Player 1', balance: 1000 },
-            { id: 2, name: 'Player 2', balance: 1000 },
-            { id: 3, name: 'Player 3', balance: 1000 },
-            { id: 4, name: 'Player 4', balance: 1000 }
+            { id: 1, name: 'Player 1', balance: 1500 },
+            { id: 2, name: 'Player 2', balance: 1500 },
+            { id: 3, name: 'Player 3', balance: 1500 },
+            { id: 4, name: 'Player 4', balance: 1500 }
         ];
         
         this.selectedPlayer = null;
@@ -41,15 +41,20 @@ class MoneyTransferGame {
         // Amount confirmation
         document.getElementById('confirmAmount').addEventListener('click', () => this.confirmAmount());
         
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', () => this.goBackToTransferType());
+        
+        // Keypad buttons
+        document.querySelectorAll('.keypad-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleKeypadPress(e));
+        });
+        
         // Close modal on outside click
         document.getElementById('transferModal').addEventListener('click', (e) => {
             if (e.target.id === 'transferModal') this.closeTransferModal();
         });
         
-        // Amount input enter key
-        document.getElementById('transferAmount').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.confirmAmount();
-        });
+        // Amount input enter key - removed since input is now readonly
     }
     
     // Handle player card clicks
@@ -104,6 +109,7 @@ class MoneyTransferGame {
         document.getElementById('transferTypeSection').style.display = 'block';
         document.getElementById('amountSection').style.display = 'none';
         document.getElementById('targetSection').style.display = 'none';
+        document.getElementById('backBtn').style.display = 'none';
         this.transferType = null;
         this.currentTarget = null;
     }
@@ -114,7 +120,36 @@ class MoneyTransferGame {
         // Move to step 2: amount input
         document.getElementById('transferTypeSection').style.display = 'none';
         document.getElementById('amountSection').style.display = 'block';
-        document.getElementById('transferAmount').focus();
+        document.getElementById('backBtn').style.display = 'inline-block';
+        // Reset amount input
+        document.getElementById('transferAmount').value = '100';
+    }
+    
+    // Go back to transfer type selection
+    goBackToTransferType() {
+        document.getElementById('amountSection').style.display = 'none';
+        document.getElementById('transferTypeSection').style.display = 'block';
+        document.getElementById('backBtn').style.display = 'none';
+        this.transferType = null;
+    }
+    
+    // Handle keypad button presses
+    handleKeypadPress(e) {
+        const btn = e.target;
+        const amountInput = document.getElementById('transferAmount');
+        const currentValue = amountInput.value;
+        
+        if (btn.dataset.action === 'clear') {
+            // Clear the input
+            amountInput.value = '0';
+        } else if (btn.dataset.value) {
+            // Append the digit
+            const newValue = currentValue === '0' ? btn.dataset.value : currentValue + btn.dataset.value;
+            // Prevent extremely large numbers
+            if (parseInt(newValue) <= 99999) {
+                amountInput.value = newValue;
+            }
+        }
     }
     
     // Confirm transfer amount
@@ -238,7 +273,7 @@ class MoneyTransferGame {
     resetGame() {
         if (confirm('Are you sure you want to reset the game? All progress will be lost.')) {
             this.players.forEach(player => {
-                player.balance = 1000;
+                player.balance = 1500;
             });
             this.updateUI();
             this.saveGameState();

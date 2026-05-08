@@ -326,24 +326,88 @@ main {
     border-radius: 8px;
 }
 
-#amountSection label {
+.amount-input-container {
+    margin-bottom: 1rem;
+}
+
+.amount-input-container label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
 }
 
-#amountSection input {
+.amount-display input {
     width: 100%;
-    padding: 0.75rem;
+    padding: 1rem;
     border: 2px solid #ddd;
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    background: white;
     margin-bottom: 1rem;
 }
 
-#amountSection input:focus {
+.amount-display input:focus {
     outline: none;
     border-color: #667eea;
+}
+
+/* Keypad styling */
+.keypad {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.keypad-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.keypad-btn {
+    padding: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 50px;
+}
+
+.keypad-btn:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+    transform: translateY(-1px);
+}
+
+.keypad-btn:active {
+    transform: translateY(0);
+    background: #e9ecef;
+}
+
+.keypad-btn.clear-btn {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.keypad-btn.clear-btn:hover {
+    background: #c82333;
+    border-color: #c82333;
+}
+
+.amount-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.amount-actions .btn {
+    flex: 1;
 }
 
 #targetSection {
